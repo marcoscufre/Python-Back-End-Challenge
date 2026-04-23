@@ -54,18 +54,16 @@ class JobViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        old_status = job.status
         job.status = JobStatus.CANCELLED
         job.save()
         
         # Publicar evento job.cancelled
+        # No revertimos el estado si esto falla, porque el worker ya podría haber visto el estado CANCELLED y detenido el pipeline.
         success = publisher.publish('job.cancelled', job.id)
         if not success:
-            job.status = old_status
-            job.save()
             return Response(
-                {"error": "Failed to publish cancellation event. Broker might be down."},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
+                {"warning": "Job cancelled in database, but notification to downstream services failed."},
+                status=status.HTTP_200_OK # El job SÍ está cancelado operacionalmente
             )
         
         return Response({"status": "job cancelled"})

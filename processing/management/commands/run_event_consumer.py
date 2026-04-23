@@ -34,8 +34,7 @@ class Command(BaseCommand):
                             self.process_event(msg_id, data)
                             self.redis_client.xack(self.stream_name, self.group_name, msg_id)
                 except Exception as e:
-                    # Lo silenciamos en caso de que ocurra algún error temporal o versión de Redis vieja
-                    pass
+                    self.stdout.write(self.style.ERROR(f"XAUTOCLAIM failed: {e}"))
 
                 # 1. Primero intentar leer mensajes pendientes (que fueron entregados pero no confirmados)
                 # Usamos ID='0' para leer mensajes en el PEL (Pending Entires List) de este consumidor

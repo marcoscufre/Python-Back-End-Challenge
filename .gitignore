@@ -3,8 +3,8 @@ __pycache__/
 *.py[codz]
 *$py.class
 
-#challenge.png
-
+challenge.png
+testear postman.md
 # C extensions
 *.so
 REVIEW_ARQUITECTURA_CHALLENGE.md
