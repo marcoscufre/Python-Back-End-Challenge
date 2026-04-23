@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from .models import Job, JobStatus
 from .serializers import JobCreateSerializer, JobDetailSerializer, JobListSerializer
 
+from .services.events import publisher
+
 class JobViewSet(viewsets.ModelViewSet):
     queryset = Job.objects.all().order_by('-created_at')
     
@@ -19,8 +21,12 @@ class JobViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         job = serializer.save()
         
-        # Aquí publicaremos el evento job.created en el paso siguiente
-        # trigger_pipeline(job) 
+        # Publicar evento job.created
+        publisher.publish('job.created', job.id, {
+            'nombre': job.nombre,
+            'tipo': job.tipo,
+            'pipeline_config': job.pipeline_config
+        })
         
         return Response({"job_id": job.id}, status=status.HTTP_201_CREATED)
 
@@ -42,6 +48,8 @@ class JobViewSet(viewsets.ModelViewSet):
         
         job.status = JobStatus.CANCELLED
         job.save()
-        # Aquí publicaremos el evento job.cancelled
+        
+        # Publicar evento job.cancelled
+        publisher.publish('job.cancelled', job.id)
         
         return Response({"status": "job cancelled"})
