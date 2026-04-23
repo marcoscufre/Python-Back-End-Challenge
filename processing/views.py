@@ -22,11 +22,19 @@ class JobViewSet(viewsets.ModelViewSet):
         job = serializer.save()
         
         # Publicar evento job.created
-        publisher.publish('job.created', job.id, {
+        success = publisher.publish('job.created', job.id, {
             'nombre': job.nombre,
             'tipo': job.tipo,
             'pipeline_config': job.pipeline_config
         })
+        
+        if not success:
+            job_id = job.id
+            job.delete() # Revertir si no se pudo encolar para mantener consistencia
+            return Response(
+                {"error": "Failed to enqueue job in Redis. Broker might be down."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
         
         return Response({"job_id": job.id}, status=status.HTTP_201_CREATED)
 

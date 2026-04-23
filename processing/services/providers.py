@@ -10,18 +10,16 @@ class BaseProvider(abc.ABC):
 class ExtractionProvider(BaseProvider):
     def process(self, input_data):
         # input_data es el contenido crudo
-        # Simular latencia base
-        time.sleep(random.uniform(0.1, 0.3))
         return f"Extracted text from: {input_data[:50]}..."
 
 class FastExtractor(ExtractionProvider):
     def process(self, input_data):
-        time.sleep(0.1) # 100ms
+        time.sleep(0.1) # Exactamente 100ms
         return super().process(input_data)
 
 class SlowExtractor(ExtractionProvider):
     def process(self, input_data):
-        time.sleep(2.0) # 2s
+        time.sleep(2.0) # Exactamente 2s
         return super().process(input_data)
 
 class AnalysisProvider(BaseProvider):

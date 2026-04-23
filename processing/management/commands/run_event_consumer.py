@@ -19,20 +19,28 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.setup_consumer_group()
-        self.stdout.write(self.style.SUCCESS('Waiting for events...'))
+        self.stdout.write(self.style.SUCCESS(f'Orchestrator started (consumer: {self.consumer_name}). Waiting for events...'))
 
         while True:
             try:
-                # Leer mensajes del stream usando consumer groups
+                # 1. Primero intentar leer mensajes pendientes (que fueron entregados pero no confirmados)
+                # Usamos ID='0' para leer mensajes en el PEL (Pending Entires List) de este consumidor
                 messages = self.redis_client.xreadgroup(
-                    self.group_name, self.consumer_name, {self.stream_name: '>'}, count=1, block=5000
+                    self.group_name, self.consumer_name, {self.stream_name: '0'}, count=1
                 )
 
-                for stream, msgs in messages:
-                    for msg_id, data in msgs:
-                        self.process_event(msg_id, data)
-                        # Acknowledgment
-                        self.redis_client.xack(self.stream_name, self.group_name, msg_id)
+                # 2. Si no hay mensajes pendientes, leer nuevos ('>')
+                if not messages or not messages[0][1]:
+                    messages = self.redis_client.xreadgroup(
+                        self.group_name, self.consumer_name, {self.stream_name: '>'}, count=1, block=5000
+                    )
+
+                if messages:
+                    for stream, msgs in messages:
+                        for msg_id, data in msgs:
+                            self.process_event(msg_id, data)
+                            # Acknowledgment
+                            self.redis_client.xack(self.stream_name, self.group_name, msg_id)
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Error in consumer loop: {e}"))
                 time.sleep(1)
