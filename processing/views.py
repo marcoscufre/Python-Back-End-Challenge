@@ -29,10 +29,8 @@ class JobViewSet(viewsets.ModelViewSet):
         })
         
         if not success:
-            job_id = job.id
-            job.delete() # Revertir si no se pudo encolar para mantener consistencia
             return Response(
-                {"error": "Failed to enqueue job in Redis. Broker might be down."},
+                {"error": "Failed to confirm enqueue in Redis. The job was created in database but might not start automatically."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
         
