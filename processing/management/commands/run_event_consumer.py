@@ -23,6 +23,20 @@ class Command(BaseCommand):
 
         while True:
             try:
+                # 0. Reclamar mensajes huérfanos de otros consumidores inactivos por más de 10s (XAUTOCLAIM)
+                try:
+                    claim_res = self.redis_client.xautoclaim(
+                        self.stream_name, self.group_name, self.consumer_name, 10000, start_id='0-0', count=5
+                    )
+                    if claim_res and len(claim_res) >= 2 and claim_res[1]:
+                        for msg_id, data in claim_res[1]:
+                            self.stdout.write(self.style.WARNING(f"Claimed orphaned message {msg_id}"))
+                            self.process_event(msg_id, data)
+                            self.redis_client.xack(self.stream_name, self.group_name, msg_id)
+                except Exception as e:
+                    # Lo silenciamos en caso de que ocurra algún error temporal o versión de Redis vieja
+                    pass
+
                 # 1. Primero intentar leer mensajes pendientes (que fueron entregados pero no confirmados)
                 # Usamos ID='0' para leer mensajes en el PEL (Pending Entires List) de este consumidor
                 messages = self.redis_client.xreadgroup(

@@ -64,10 +64,22 @@ def test_full_pipeline_integration(api_client, redis_client):
                 break
     assert found_created, "El evento job.created no se encontró en Redis"
 
-    # 3. Ejecutar el orquestador para este job (simulando el worker)
+    # 3. Ejecutar el orquestador usando el mecanismo real de streaming (simulando el loop del worker)
     orchestrator = OrchestratorCommand()
-    # No corremos handle() porque es un loop infinito, corremos la lógica directamente
-    orchestrator.run_pipeline(str(job_id))
+    orchestrator.setup_consumer_group()
+    
+    # Leemos el evento como lo hace el consumer group ('XREADGROUP ... >')
+    messages = orchestrator.redis_client.xreadgroup(
+        orchestrator.group_name, orchestrator.consumer_name, {orchestrator.stream_name: '>'}, count=1, block=2000
+    )
+    
+    assert len(messages) > 0, "El worker no encontró mensajes nuevos en el consumer group"
+    
+    for stream, msgs in messages:
+        for msg_id, data in msgs:
+            assert data[b'event_type'].decode('utf-8') == 'job.created'
+            orchestrator.process_event(msg_id, data)
+            orchestrator.redis_client.xack(orchestrator.stream_name, orchestrator.group_name, msg_id)
     
     # 4. Verificar estado final
     job = Job.objects.get(id=job_id)

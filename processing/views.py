@@ -54,10 +54,18 @@ class JobViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        old_status = job.status
         job.status = JobStatus.CANCELLED
         job.save()
         
         # Publicar evento job.cancelled
-        publisher.publish('job.cancelled', job.id)
+        success = publisher.publish('job.cancelled', job.id)
+        if not success:
+            job.status = old_status
+            job.save()
+            return Response(
+                {"error": "Failed to publish cancellation event. Broker might be down."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
         
         return Response({"status": "job cancelled"})
