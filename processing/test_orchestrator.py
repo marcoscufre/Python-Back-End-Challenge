@@ -36,3 +36,21 @@ class TestOrchestrator:
             # Verificar eventos (creado, started x2, completed x2, job.completed)
             # Notar que job.created ya fue enviado por la vista, aquí probamos los del pipeline
             assert mock_publish.call_count >= 5 
+
+    def test_consumer_handles_xautoclaim_failure(self):
+        command = ConsumerCommand()
+        command.redis_client = MagicMock()
+        # Forzar error en xautoclaim
+        command.redis_client.xautoclaim.side_effect = Exception("Redis error")
+        # Forzar salida del loop en la siguiente instrucción
+        command.redis_client.xreadgroup.side_effect = KeyboardInterrupt()
+        
+        with patch.object(command.stdout, 'write') as mock_stdout:
+            try:
+                command.handle()
+            except KeyboardInterrupt:
+                pass
+            
+            # Verificar que se escribió el error en stdout/stderr
+            args, _ = mock_stdout.call_args_list[1] # La primera es "Orchestrator started..."
+            assert "XAUTOCLAIM failed: Redis error" in args[0]

@@ -16,7 +16,7 @@ services:
 
   web:
     build: .
-    command: uvicorn backend.asgi:application --host 0.0.0.1 --port 8000 --reload
+    command: uvicorn backend.asgi:application --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/code
     ports:

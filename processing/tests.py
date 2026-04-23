@@ -56,3 +56,34 @@ class TestJobAPI:
         url = reverse('job-cancel', kwargs={'pk': job.id})
         response = api_client.post(url)
         assert response.status_code == 400
+
+    def test_cancel_job_redis_failure_warning(self, api_client):
+        job = Job.objects.create(nombre="J1", tipo="T", contenido="C", pipeline_config=[], status=JobStatus.PROCESSING)
+        url = reverse('job-cancel', kwargs={'pk': job.id})
+        
+        with patch('processing.services.events.publisher.publish', return_value=False):
+            response = api_client.post(url)
+            assert response.status_code == 200
+            assert "warning" in response.data
+            job.refresh_from_db()
+            assert job.status == JobStatus.CANCELLED
+
+    def test_create_job_invalid_pipeline_too_many_stages(self, api_client):
+        url = reverse('job-list')
+        data = {
+            "nombre": "Test", "tipo": "PDF", "contenido": "...",
+            "pipeline_config": ["extraction", "analysis", "enrichment", "extraction"] # 4 stages
+        }
+        response = api_client.post(url, data, format='json')
+        assert response.status_code == 400
+        assert "more than 3 stages" in str(response.data['pipeline_config'])
+
+    def test_create_job_invalid_pipeline_wrong_type(self, api_client):
+        url = reverse('job-list')
+        data = {
+            "nombre": "Test", "tipo": "PDF", "contenido": "...",
+            "pipeline_config": ["extraction", 123] # Invalid type
+        }
+        response = api_client.post(url, data, format='json')
+        assert response.status_code == 400
+        assert "Must be string or object" in str(response.data['pipeline_config'])
