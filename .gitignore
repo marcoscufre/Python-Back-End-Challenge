@@ -6,8 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
-challenge.png
-
+ challenge.png
+ temp_challenge_copy.png
 # Distribution / packaging
 .Python
 build/

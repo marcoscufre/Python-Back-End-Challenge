@@ -1,0 +1,9 @@
+django>=4.2
+djangorestframework
+django-environ
+redis
+uvicorn
+psycopg2-binary
+pytest
+pytest-django
+httpx
