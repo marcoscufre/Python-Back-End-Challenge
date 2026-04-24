@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Job, JobStatus
 from .serializers import JobCreateSerializer, JobDetailSerializer, JobListSerializer
+from .services.job_service import JobService
 
 from .services.events import publisher
 
@@ -19,14 +20,13 @@ class JobViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer_class()(data=request.data)
         serializer.is_valid(raise_exception=True)
-        job = serializer.save()
         
-        # Publicar evento job.created
-        success = publisher.publish('job.created', job.id, {
-            'nombre': job.nombre,
-            'tipo': job.tipo,
-            'pipeline_config': job.pipeline_config
-        })
+        job, success = JobService.create_job(
+            nombre=serializer.validated_data['nombre'],
+            tipo=serializer.validated_data['tipo'],
+            contenido=serializer.validated_data['contenido'],
+            pipeline_config=serializer.validated_data['pipeline_config']
+        )
         
         if not success:
             return Response(

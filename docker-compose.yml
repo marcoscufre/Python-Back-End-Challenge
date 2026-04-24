@@ -52,5 +52,19 @@ services:
       - redis
       - db
 
+  grpc_server:
+    build: .
+    command: python manage.py run_grpc_server
+    volumes:
+      - .:/code
+    ports:
+      - "50051:50051"
+    environment:
+      - DATABASE_URL=postgres://user:password@db:5432/processing_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - db
+
 volumes:
   postgres_data:

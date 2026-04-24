@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package jobs;
+
+service JobService {
+  rpc CreateJob(CreateJobRequest) returns (CreateJobResponse);
+  rpc GetJob(GetJobRequest) returns (GetJobResponse);
+}
+
+message Stage {
+  string stage = 1;
+  string variant = 2;
+}
+
+message CreateJobRequest {
+  string nombre = 1;
+  string tipo = 2;
+  string contenido = 3;
+  repeated Stage pipeline_config = 4;
+}
+
+message CreateJobResponse {
+  string job_id = 1;
+  string error = 2;
+}
+
+message GetJobRequest {
+  string job_id = 1;
+}
+
+message JobMessage {
+  string id = 1;
+  string nombre = 2;
+  string tipo = 3;
+  string status = 4;
+  string results_json = 5;
+  string created_at = 6;
+  string updated_at = 7;
+}
+
+message GetJobResponse {
+  JobMessage job = 1;
+  string error = 2;
+}
