@@ -2,14 +2,11 @@
 __pycache__/
 *.py[codz]
 *$py.class
-prompt grpc.md
-challenge.png
+
 testear postman.md
 # C extensions
 *.so
-REVIEW_ARQUITECTURA_CHALLENGE.md
- challenge.png
- temp_challenge_copy.png
+
 # Distribution / packaging
 .Python
 build/
