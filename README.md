@@ -347,23 +347,3 @@ python manage.py run_downstream_consumer
 ```bash
 python manage.py run_grpc_server
 ```
-
-## Decisiones de diseno relevantes
-- REST y gRPC comparten la capa `JobService` para evitar duplicacion de logica.
-- Redis Streams fue elegido porque cubre persistencia, consumer groups y acknowledgments.
-- El pipeline es secuencial y configurable por job.
-- Los providers estan abstraidos detras de una factory (`get_provider`).
-- La cancelacion se controla por estado y se verifica entre etapas.
-
-## Limitaciones
-- Es una solucion de challenge, no production-ready.
-- Los providers son mocks simulados.
-- No hay interfaz gRPC para cancelacion, solo para creacion y consulta.
-- No hay estrategia avanzada tipo outbox persistente; la fuente de verdad es la DB y Redis se maneja con semantica de mejor esfuerzo con señales explicitas al cliente.
-
-## Entregables del challenge cubiertos
-- Repositorio con codigo.
-- README con instrucciones de uso.
-- Arquitectura desacoplada con event streaming.
-- Tests ejecutables.
-- Bonus gRPC implementado sin duplicar la logica principal de creacion/consulta.
